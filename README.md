@@ -49,12 +49,12 @@ headers = {'authorization': access_token}
 
 
 # Call full content API with token
-api_conn = http.client.HTTPSConnection("e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com")
+api_conn = http.client.HTTPSConnection("7wo9u54nd3.execute-api.us-gov-west-1.amazonaws.com")
 
 # Use token to call API with desired parameters, potential calls are below as well as all the example queries for each endpoint
 
 # Most recent content
-api_conn.request('GET','/dev/v2019-04-15/content/vk/', headers=headers)
+api_conn.request('GET','/prod/v2019-04-15/content/vk/', headers=headers)
 
 # Single content ID
 # api_conn.request('GET','/dev/v2019-04-15/content/vk/CONTENT_ID', headers=headers)
