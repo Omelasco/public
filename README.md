@@ -7,7 +7,13 @@ producing that content. Contact Omelas at our [contact page](https://www.omelas.
 #### Versions
 
 - Current version: v2019-04-15:
-    - Includes location and content endpoints
+    - Includes endpoints:
+        - location
+        - content
+        - entity
+        - relationship
+        - interaction
+    
 
 ## Quickstart
 
@@ -48,16 +54,18 @@ api_conn = http.client.HTTPSConnection("e9bz5rf9tc.execute-api.us-gov-west-1.ama
 # Use token to call API with desired parameters, potential calls are below as well as all the example queries for each endpoint
 
 # Most recent content
-api_conn.request('GET','/dev/v2019-04-15/content/', headers=headers)
+api_conn.request('GET','/dev/v2019-04-15/content/vk/', headers=headers)
 
 # Single content ID
-# api_conn.request('GET','/dev/v2019-04-15/content/CONTENT_ID', headers=headers)
+# api_conn.request('GET','/dev/v2019-04-15/content/vk/CONTENT_ID', headers=headers)
 
 # Single content ID
-# api_conn.request('GET','/dev/v2019-04-15/location/LOCATION_ID', headers=headers)
+# api_conn.request('GET','/dev/v2019-04-15/location/twitter/LOCATION_ID', headers=headers)
 
+# Note that timestamps need to be encoded as URLs, generally, this just means replacing spaces with %20.
+# Timestamps are parsed with dateutil.parser.parse
 # Specify content start time
-# api_conn.request('GET','/dev/v2019-04-15/content/?content_timestamp=TIMESTAMP', headers=headers)
+# api_conn.request('GET','/dev/v2019-04-15/content/twitter/?most_recent_content_timestamp=TIMESTAMP', headers=headers)
 
 
 
@@ -66,9 +74,6 @@ api_res = api_conn.getresponse()
 api_data = api_res.read()
 api_data_string = api_data.decode('utf-8')
 final_data_dict = json.loads(api_data_string)
-
-# Call single content ID
-
 
 ```
 
@@ -79,14 +84,21 @@ Omelas currently supports the following endpoints:
   - Text from various sources eg. social media posts
 - Location
   - Information and scores about locations of various sizes including recent content about those locations. 
-
+- Entity
+  - Metadata about a social media user or group
+- Relationship
+  - Metadata about relationship between two entities, entities are allowed to have multiple types of relationship
+- Interactions
+  - Information about specific interactions between two entities 
 
 
 ### Content
 
 This endpoint provides access to content objects either single item or a list of the most recent items.
 
-This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/content/`. See below for examples. 
+Content endpoints are prefaced by /content and followed by the particular platform. For example: `/content/twitter` and `/content/vk`. 
+
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/content/{platform_name}`. See below for examples. 
 
 #### Return objects
 
@@ -98,6 +110,7 @@ The content endpoint returns content objects as a list along with metadata about
 {'content_list': List of Content Objects,
  'requested_timestamp': start_time requested, text
  'oldest_timestamp': oldest timestamp on content object, text,
+ 'actor_id': Id number of actor requested, Null if not called, int
  'content_length': length of content list, int
 }
 ```
@@ -107,13 +120,15 @@ The content endpoint returns content objects as a list along with metadata about
     {'content_id': internal id, int,
     'entity_name': content originator text,
     'text': content text, text
-    'translated_text': translated text, text,
+    'translated_text': translated text, text, - Only included for users who have the translation plan.
     'language_key': Two or three letter language code, text
     'date_posted': datetime, text,
     'content_url': text,
     'locations': list of dictionaries of form 
                 {'location_id': int
-                'location_name: text}
+                'location_name: text},
+    'platform_id': int,
+    'platform_name': text
     }
 ```
 
@@ -128,27 +143,48 @@ The content API can be queried with the parameters below to access particular pi
 
 - content_id (int)
   - Unique identifier assigned by Omelas
-  - multiple items can be passed `/?content_id=1&content_id=2`, up to 200 items are allowed
+  - multiple items can be passed `/?content_id=1&content_id=2`, up to 50 items are allowed
 - limit (int)
-  - Number of items to return, no more than 200
-  - Defaults to 200
-- content_timestamp (timestamp)
+  - Number of items to return, no more than 50
+  - Defaults to 50
+- most_recent_content_timestamp (timestamp)
   - Most recent time to get content from, for example, set to midnight today, will get the last content published yesterday
   - Defaults to now
+  - Timestamp is parsed by Python library dateutil.parser.parse and needs to be parseable as a URL parameter, ie. %20 replacing spaces.
+- actor_id (int)
+  - Id for actor associated with desired content
+  - Actors are associated to content from Entity -> Brand -> Portfolio -> Actor 
+- content_keyword (text)
+  - Search term that must be included in all returned content (case insensitive)
+  - Searches raw and translated content for users on the translation plan and only raw content for others.
+  - Multiple keywords can be included as long as they are separated with either an and operator (`&`) or an or operator (`|`). 
+  These operators can be combined with parenthesis if needed. 
+    - All content keywords must be URL encoded, your package or tool of choice may do this automatically. This [encoding tutorial](https://www.w3schools.com/tags/ref_urlencode.asp) can provide assistance.
+    - A query for content including the terms Russia and Iran but not Iraq would initially be `(Russia & Iran) & !Iraq` 
+    and the URL would be `%28Russia%26Iran%29+%26+%21Iraq`.
+    - No spaces will be permitted in the content query.
 
 #### Example queries
 
 
 
-`/v2019-04-15/content/` - Returns the most recent 200 content objects
+`/v2019-04-15/content/twitter/` - Returns the most recent 50 content objects from Twitter.
 
-`/v2019-04-15/content/CONTENT_ID` - Returns a single content object with the associated content ID.
+`/v2019-04-15/content/twitter/CONTENT_ID` - Returns a single content object with the associated content ID, CONTENT_ID must be from Twitter.
 
-`/v2019-04-15/content/?content_id=CONTENT_ID_1&content_id=CONTENT_ID_2` - Returns two content objects with the corresponding IDs.
+`/v2019-04-15/content/twitter/?content_id=CONTENT_ID_1&content_id=CONTENT_ID_2` - Returns two content objects with the corresponding IDs.
 
-`/v2019-04-15/content/?limit=3` - Returns most recent 3 content items
+`/v2019-04-15/content/vk/?limit=3` - Returns most recent 3 content items from VK
 
-`/v2019-04-15/content/?content_timestamp=2018-01-01` - Return most recent content before 2018-01-01
+`/v2019-04-15/content/vk/?actor_id=10` - Returns most recent content from actor_id 10   
+
+`/v2019-04-15/content/vk/?content_keyword=Russia` - Returns most recent 50 content items that include the exact term 'Russia'
+
+`/v2019-04-15/content/vk/?content_keyword=Russia+%26+Putin` - Returns most recent 50 content items that include both the exact terms Russia and Putin
+
+`/v2019-04-15/content/vk/?content_keyword=Europe+%7C+Asia` - Returns most recent 50 content items that include either Europe or Asia
+
+`/v2019-04-15/content/vk/?most_recent_content_timestamp=2018-01-01` - Return most recent content from VK before 2018-01-01
 
 ### Location
 
@@ -183,7 +219,7 @@ The location endpoint returns a list of Location objects as well as additional m
 'location_population': Population of location, int,
 'location_type': Type of location, primarily City, Region, Country 
 'location_name': name, text,
-'recent_location_content': list of up to 200 tuples of (content ids, date_posted) associated with location, list of ints,
+'recent_location_content': list of up to 50 tuples of (content ids, date_posted, platform_name) associated with location, list of ints,
 'related_locations': list of dictionaries of contained locations
                                             {'related_location_name':name
                                             'related_location_id':id} ,
@@ -207,9 +243,10 @@ The API accepts different query parameters to help filter and pinpoint particula
   - Defaults to False
   - True/true should be passed to get the related locations
     
-- content_timestamp (timestamp)
+- most_recent_content_timestamp (timestamp)
    - Most recent time to get content from, for example, set to midnight today, will get the last content published yesterday
    - Defaults to now
+   - Timestamp is parsed by Python library dateutil.parser.parse and needs to be parseable as a URL parameter, ie. %20 replacing spaces.
    
 - location_name (string)
   - This can only be used with the `/v2019-04-15/location/search` endpoint.
@@ -217,7 +254,7 @@ The API accepts different query parameters to help filter and pinpoint particula
     - The lookup is not case sensitive
     - Search will only return exact matches
   - This can be called with multiple names (see below for an example)
-    - Only 200 names can be called at one time.
+    - Only 50 names can be called at one time.
 
 
 ##### Example queries
@@ -264,6 +301,7 @@ The entity endpoint returns a list of entity objects and some metadata about the
  "platform_name": "string",
  "platform_account_id": "string",
  "entity_name": "string",
+ "entity_url": "string",
  "entity_id": "int"}
 ```
 
@@ -278,7 +316,7 @@ The content API can be queried with the parameters below to access particular pi
 
 - entity_id (int)
   - Unique identifier assigned by Omelas
-  - multiple items can be passed `/?entity_id=1&entity_id=2`, up to 200 items are allowed
+  - multiple items can be passed `/?entity_id=1&entity_id=2`, up to 50 items are allowed
 
 #### Example queries
 
@@ -304,7 +342,9 @@ It also includes metadata about when the first and last interaction returned occ
  'interacting_entities': list of int of interacting entity IDs
  'primary_entities': list of entity IDs who were interacted with
  'actual_start_time': 'datetime', earliest interaction returned
- 'end_time': 'datetime', most recent interaction to return
+ 'start_time_requested': 'datetime', start time requested
+ 'end_time_requested': 'datetime', most recent interaction requested
+ 'actual_end_time': 'datetime', most recent interaction returned
  'interaction_count': 'int', number of interactions returned in the interaction_list}
 ```
 
@@ -322,7 +362,7 @@ It also includes metadata about when the first and last interaction returned occ
 
 #### Query parameters
 
-The interaction API can be queried with the given parameters below
+The interaction API can be queried with the given parameters below. Timestamps are parsed by Python library dateutil.parser.parse and needs to be parseable as a URL parameter, ie. %20 replacing spaces.
 
 - /
   - Parameters
@@ -330,20 +370,22 @@ The interaction API can be queried with the given parameters below
       - Either this or interacting is required
       - Entity ID for user who is interacted with
       - An ID to return all all interactions that other entities have initiated with the provided entity ID.
+      - Multiple entities can be passed, up to 50
     - interacting_entity_id
       - Either this or primary is required
       - Entity ID for user who interacts with people
       - An ID that returns all interactions that an entity has initiated with other entities.
-    - end_time
-      - Optional, unless start_time is also passed
+      - Multiple entities can be passed, up to 50
+    - most_recent_time
+      - Optional, unless oldest_time is also passed
       - Time of the last interaction to return
       - Defaults to now
-    - start_time
+    - oldest_time
       - Optional
       - Time of the first interaction to return
       - Defaults to 1 day before end_time
       - No greater than 7 days between start and end time
-      - Only 1000 interactions will be returned at a time
+      - Only 50 interactions will be returned at a time
     - interaction_type_id
       - Optional
       - ID of interaction type to pull
@@ -358,7 +400,7 @@ The interaction API can be queried with the given parameters below
 
 `/v2019-04-15/interactions/?primary_entity_id=ENTITY_ID_1&interaction_type_id=INTERACTION_TYPE_ID` - Returns interactions with entity_id_1 of the given type
 
-`/v2019-04-15/interactions/?interacting_entity_id=ENTITY_ID_2&start_time=TIME_1&end_time=TIME_2` - Returns interactions between time_1 and time_2 where entity_id_2 was interacting with other users
+`/v2019-04-15/interactions/?interacting_entity_id=ENTITY_ID_2&oldest_time=TIME_1&most_recent_time=TIME_2` - Returns interactions between time_1 and time_2 where entity_id_2 was interacting with other users
 
 ### Relationships
 
@@ -370,15 +412,16 @@ This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.a
 #### Return objects
 
 This endpoint returns relationship objects called by either the entity who is being interacted with (Followed, Commented On, Interacted with) or the interacting entity (Follower, Commenter, Interactor).
-Friends are logged in both directions. Each call returns up to 500 relationship objects.
+Friends are logged in both directions. Each call returns up to 50 relationship objects.
 
 ##### Overall return
 
 ```
 {
 	"relationship_list": list of Relationship Objects,
-	"num_relationships": "int", length of relationship list
-	"most_recent_logged_returned": "datetime", most recent relationship time returned, this can be used to paginate
+	"num_relationships": "int", length of relationship list,
+	"most_recent_logged_returned": "datetime", most recent relationship time returned, this can be used to paginate,
+	"oldest_logged_returned": "datetime",oldest relationship time returned, this can be used to paginate
 }
 ```
 
@@ -390,9 +433,16 @@ Friends are logged in both directions. Each call returns up to 500 relationship 
      "secondary_entity_id": "int", Secondary entity (Follower, Commentor, Interactor)
      "relationship_type": "string", Type of relationship (inc. Friend, Interactor, Follower, Commenter)
      "relationship_type_id": "int", 
-     "first_logged": "datetime", The first time the relationship was logged by Omelas
+     "first_logged": "datetime", The first time the relationship was logged by Omelas,
+     "relationship_id": "int", Omelas produced identifier for a particular relationship
 }
 ```
+
+#### Path parameters
+
+- relationship_id
+  - An integer to return a single relationship object with the same ID.
+
 
 #### Query parameters
 
@@ -408,8 +458,9 @@ The relationship API can be queried with the given parameters below
       - Entity ID for secondary entities
       - ie. find all accounts a user follows, comments or interacts with
         - Note that only followers who interact with the user are logged as followers
-    - earliest_relationship_logged (datetime)
-      - Earliest time to look for relationship's initial logged time. This can be use to paginate through relationships.
+    - most_recent_relationship_start (datetime)
+      - Most recent time to look for relationship's initial logged time. This can be use to paginate through relationships.
+      - Timestamp is parsed by Python library dateutil.parser.parse and needs to be parseable as a URL parameter, ie. %20 replacing spaces.
     - relationship_type_id (int)
       - Types of relationships to return (Friend: 1, Interactor: 2, Follower: 3, Commenter: 4)
 
@@ -427,7 +478,7 @@ The relationship API can be queried with the given parameters below
 
 ## Authentication and Authorization
 
-The Omelas Data API is secured with OAuth 2.0 tokens provided by AuthO. These tokens provide access for 24 hours and can be refreshed
+The Omelas Data API is secured with OAuth 2.0 tokens provided by AuthO. These tokens provide access for 7 days and can be refreshed
 using the provided client ID and client secret. 
 
 
@@ -438,6 +489,8 @@ The overall structure of the authorization flow below is borrowed from the AuthO
 ### Calling the Auth API
 
 The client_id and client_secret are used to call for the API token. The two examples below print out the token and can be changed to store it as a variable.
+
+A base plan from Omelas allows calling the Auth API 30 times in a given month.
 
 The call will return the json object below:
 ```json
