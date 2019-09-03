@@ -24,7 +24,6 @@ Basic steps:
 Python code for calling the content endpoint:
 
 ```python
-
 import http.client
 import json
 
@@ -46,18 +45,16 @@ data_dict = json.loads(data)
 access_token = data_dict['token_type'] + ' ' + data_dict['access_token']
 headers = {'authorization': access_token}
 
-
-
 # Call full content API with token
 api_conn = http.client.HTTPSConnection("7wo9u54nd3.execute-api.us-gov-west-1.amazonaws.com")
 
 # Use token to call API with desired parameters, potential calls are below as well as all the example queries for each endpoint
 
 # Most recent content
-api_conn.request('GET','/prod/v2019-04-15/content/vk/', headers=headers)
+api_conn.request('GET','/prod/v2019-04-15/content/vkontakte/', headers=headers)
 
 # Single content ID
-# api_conn.request('GET','/dev/v2019-04-15/content/vk/CONTENT_ID', headers=headers)
+# api_conn.request('GET','/dev/v2019-04-15/content/vkontakte/CONTENT_ID', headers=headers)
 
 # Single content ID
 # api_conn.request('GET','/dev/v2019-04-15/location/twitter/LOCATION_ID', headers=headers)
@@ -67,14 +64,11 @@ api_conn.request('GET','/prod/v2019-04-15/content/vk/', headers=headers)
 # Specify content start time
 # api_conn.request('GET','/dev/v2019-04-15/content/twitter/?most_recent_content_timestamp=TIMESTAMP', headers=headers)
 
-
-
 # Process and decode response
 api_res = api_conn.getresponse()
 api_data = api_res.read()
 api_data_string = api_data.decode('utf-8')
 final_data_dict = json.loads(api_data_string)
-
 ```
 
 ## Resource endpoints
@@ -96,9 +90,22 @@ Omelas currently supports the following endpoints:
 
 This endpoint provides access to content objects either single item or a list of the most recent items.
 
-Content endpoints are prefaced by /content and followed by the particular platform. For example: `/content/twitter` and `/content/vk`. 
+Content endpoints are prefaced by /content and followed by the particular platform. For example: `/content/twitter` and `/content/vkontakte`. 
 
 This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/content/{platform_name}`. See below for examples. 
+
+#### Available platforms
+The following platforms are available, in the listed format. Formatting is all lower-case, ie. 'twitter'.
+- Twitter: 'twitter'
+- VKontakte/VK: 'vkontakte'
+- Reddit: 'reddit'
+- Odnoklassniki/OK.RU: 'okru'
+- YouTube: 'youtube'
+- RSS: 'rss'
+- Instagram: 'instagram'
+- Telegram: 'telegram'
+- Aparat: 'aparat'
+- Soroush: 'soroush'
 
 #### Return objects
 
@@ -112,6 +119,7 @@ The content endpoint returns content objects as a list along with metadata about
  'oldest_timestamp': oldest timestamp on content object, text,
  'actor_id': Id number of actor requested, Null if not called, int
  'content_length': length of content list, int
+ 'platform_name': name of called platform, text
 }
 ```
 
@@ -174,17 +182,17 @@ The content API can be queried with the parameters below to access particular pi
 
 `/v2019-04-15/content/twitter/?content_id=CONTENT_ID_1&content_id=CONTENT_ID_2` - Returns two content objects with the corresponding IDs.
 
-`/v2019-04-15/content/vk/?limit=3` - Returns most recent 3 content items from VK
+`/v2019-04-15/content/vkontakte/?limit=3` - Returns most recent 3 content items from VK
 
-`/v2019-04-15/content/vk/?actor_id=10` - Returns most recent content from actor_id 10   
+`/v2019-04-15/content/vkontakte/?actor_id=10` - Returns most recent content from actor_id 10   
 
-`/v2019-04-15/content/vk/?content_keyword=Russia` - Returns most recent 50 content items that include the exact term 'Russia'
+`/v2019-04-15/content/vkontakte/?content_keyword=Russia` - Returns most recent 50 content items that include the exact term 'Russia'
 
-`/v2019-04-15/content/vk/?content_keyword=Russia+%26+Putin` - Returns most recent 50 content items that include both the exact terms Russia and Putin
+`/v2019-04-15/content/vkontakte/?content_keyword=Russia+%26+Putin` - Returns most recent 50 content items that include both the exact terms Russia and Putin
 
-`/v2019-04-15/content/vk/?content_keyword=Europe+%7C+Asia` - Returns most recent 50 content items that include either Europe or Asia
+`/v2019-04-15/content/vkontakte/?content_keyword=Europe+%7C+Asia` - Returns most recent 50 content items that include either Europe or Asia
 
-`/v2019-04-15/content/vk/?most_recent_content_timestamp=2018-01-01` - Return most recent content from VK before 2018-01-01
+`/v2019-04-15/content/vkontakte/?most_recent_content_timestamp=2018-01-01` - Return most recent content from VK before 2018-01-01
 
 ### Location
 
