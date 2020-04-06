@@ -89,7 +89,7 @@ Omelas currently supports the following endpoints:
 - Story
  - Summary data and id for aggregated stories
 - Campaign
- - Summary data and id detectedd adversarial campaigns
+ - Summary data and id detected adversarial campaigns
 
 ### Content
 
@@ -247,6 +247,196 @@ The content API can be queried with the parameters below to access particular pi
 `/v2019-04-15/entity/ENTITY_ID` - Returns a single entity object with the provided entity ID
 
 `/v2019-04-15/entity/?entity_id=ENTITY_ID_1&entity_id=ENTITY_ID_2` - Returns two entity objects with the corresponding IDs.
+
+### Brand
+
+This endpoint provides access to one or more brand objects.
+
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/brand/`. See below for examples. 
+
+#### Return objects
+
+The brand endpoint returns a list of brand objects and some metadata about the request and the number of objects returned.
+
+##### Overall return
+```
+{
+	"brand_list":"list", List of brand objects
+	"num_entities": "int", Number of brands in the brand list
+}
+```
+
+##### Brand Object
+```
+
+{"brand_id": "int", Internal Omelas ID, 
+"brand_name": "string", Plain name for brand, 
+"portfolio_id": "int", Internal Omelas ID,
+"actor_id": "int", Internal Omelas ID, 
+"num_entities": "int", Count of entities or accounts associated with brand
+"num_platforms": "int", Count of platforms on which the brand holds accounts, 
+"brand_type": "string", Classification of brand
+"brand_type_id": "int", Internal Omelas ID}
+
+```
+
+#### Path parameters
+
+- brand_id
+  - An integer to return a single entity brand with the same ID.
+
+#### Query parameters
+
+The brand API can be queried with the parameters below to access particular brands
+
+- story_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `/story_id=1&story_id=2`, up to 50 items are allowed
+
+- first_discovered_beg (datetime as a string)
+- first_discovered_end (datetime as a string)
+  - Range of datetimes for first instance of story
+
+- story_keyword (string)
+  - String listed in top terms of return object
+  - multiple items can be passed `?story_keyword=foo&story_keyword=example`, up to 50 items are allowed
+
+- actor_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?actor_id=1&actor_id=2`, up to 50 items are allowed
+
+- portfolio_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?portfolio_id=1&portfolo_id=2`, up to 50 items are allowed
+
+- brand_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?brand_id=1&brand_id=2`, up to 50 items are allowed
+
+
+#### Example queries
+
+`/v2019-04-15/brand/BRAND_ID` - Returns a single brand object with the provided entity ID
+
+`/v2019-04-15/brand/?actor_id=ACTOR_ID_1&actor_id=ACTOR_ID_2` - Returns all brand objects belonging to specified actors.
+
+### Portfolio
+
+This endpoint provides access to one or more portfolio objects. A portfolio is a media house, ministry, military branch, 
+or embassy controlling one or more brands.
+
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/portfolio/`. See below for examples. 
+
+#### Return objects
+
+The portfolio endpoint returns a list of portfolio objects and some metadata about the request and the number of objects returned.
+
+##### Overall return
+```
+{
+	"portfolio_object_list":"list", List of portfolio objects
+	"num_entities": "int", Number of protfolios in the portfolio list
+}
+```
+
+##### Portfolio Object
+```
+
+    {
+      "portfolio_id": "int", Internal Omelas ID
+      "portfolio_name": "string", Plain English name of portfolio
+      "actor_id": "int", Interal Omelas ID
+      "actor_name": "string", Plain English name of portfolio
+      "brand_list": "list", list of Omelas IDs of brands owned by portfolio
+      "portfolio_type": "string", Classification of portfolio
+      "num_brands": "int", Number of brands owned by portfolio
+      "num_entities": "int", Number of entities owned by portfolio
+      "num_platforms": "int", Count of platforms on which the portfolio holds accounts
+    }
+
+```
+
+#### Path parameters
+
+- portfolio_id
+  - An integer to return a single entity portfolio with the same ID.
+
+#### Query parameters
+
+The portfolio API can be queried with the parameters below to access particular portfolios
+
+- portfolio_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?portfolio_id=1&portfolio_id_id=2`, up to 50 items are allowed
+
+- actor_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?actor_id=1&actor_id=2`, up to 50 items are allowed
+
+
+#### Example queries
+
+`/v2019-04-15/portfolio/PORTFOLIO_ID` - Returns a single portfolio object with the provided portfolio ID
+
+`/v2019-04-15/portfolio/?actor_id=ACTOR_ID_1&actor_id=ACTOR_ID_2` - Returns all portfolio objects belonging to specified actors.
+
+`/v2019-04-15/portfolio/search/portfolio_match=Justice` - Returns all Ministries of Justice
+
+
+### Story
+
+This endpoint provides access to one or more story objects.
+
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/story/`. See below for examples. 
+
+#### Return objects
+
+The story endpoint returns a list of story objects and some metadata about the request and the number of objects returned.
+
+##### Overall return
+```
+{
+	"story_object_list":"list", List of portfolio objects
+	"num_entities": "int", Number of protfolios in the portfolio list
+}
+```
+
+##### Story Object
+```
+
+{'story_id': "int", Internal Omelas ID
+'story_title': "string", Title for the story taken from a relevant headline 
+'top_terms': "list", List of relevant keywords   
+'recent_headlines': "list", A sample of headlines from the story, 
+'first_discovered_timestamp': "timestamp", The earliest instance of an article in the story}
+
+
+```
+
+#### Path parameters
+
+- story_id
+  - An integer to return a single entity portfolio with the same ID.
+
+#### Query parameters
+
+The story API can be queried with the parameters below to access particular stories
+
+- portfolio_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?portfolio_id=1&portfolio_id_id=2`, up to 50 items are allowed
+
+- actor_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?actor_id=1&actor_id=2`, up to 50 items are allowed
+
+
+#### Example queries
+
+`/v2019-04-15/portfolio/PORTFOLIO_ID` - Returns a single portfolio object with the provided portfolio ID
+
+`/v2019-04-15/portfolio/?actor_id=ACTOR_ID_1&actor_id=ACTOR_ID_2` - Returns all portfolio objects belonging to specified actors.
+
 
 ## Authentication and Authorization
 
