@@ -2,7 +2,7 @@
 
 Omelas offers programmatic API access to our proprietary database of curated content from social media and other publicly
 available data sources. The API also provides access to descriptive and predictive analytics about the content and the users
-producing that content. Contact Omelas at our [contact page](https://www.omelas.co/contact) for more information and access.
+producing that content.
 
 #### Versions
 
@@ -13,9 +13,7 @@ producing that content. Contact Omelas at our [contact page](https://www.omelas.
         - brand
         - portfolio
         - actor
-        - story
-        - campaigns
-    
+        - story    
 
 ## Quickstart
 
@@ -56,15 +54,15 @@ api_conn = http.client.HTTPSConnection("7wo9u54nd3.execute-api.us-gov-west-1.ama
 api_conn.request('GET','/prod/v2019-04-15/content/vkontakte/', headers=headers)
 
 # Single content ID
-# api_conn.request('GET','/dev/v2019-04-15/content/vkontakte/CONTENT_ID', headers=headers)
+# api_conn.request('GET','/prod/v2019-04-15/content/vkontakte/CONTENT_ID', headers=headers)
 
 # Single content ID
-# api_conn.request('GET','/dev/v2019-04-15/location/twitter/LOCATION_ID', headers=headers)
+# api_conn.request('GET','/prod/v2019-04-15/location/twitter/LOCATION_ID', headers=headers)
 
 # Note that timestamps need to be encoded as URLs, generally, this just means replacing spaces with %20.
 # Timestamps are parsed with dateutil.parser.parse
 # Specify content start time
-# api_conn.request('GET','/dev/v2019-04-15/content/twitter/?most_recent_content_timestamp=TIMESTAMP', headers=headers)
+# api_conn.request('GET','/prod/v2019-04-15/content/twitter/?most_recent_content_timestamp=TIMESTAMP', headers=headers)
 
 # Process and decode response
 api_res = api_conn.getresponse()
@@ -88,8 +86,6 @@ Omelas currently supports the following endpoints:
   - Metadata about a state, FTO, intergovernmental body, militia, or breakaway region
 - Story
  - Summary data and id for aggregated stories
-- Campaign
- - Summary data and id detected adversarial campaigns
 
 ### Content
 
@@ -97,7 +93,7 @@ This endpoint provides access to content objects either single item or a list of
 
 Content endpoints are prefaced by /content and followed by the particular platform. For example: `/content/twitter` and `/content/vkontakte`. 
 
-This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/content/{platform_name}`. See below for examples. 
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/prod/v2019-04-15/content/{platform_name}`. See below for examples. 
 
 #### Available platforms
 The following platforms are available, in the listed format. Formatting is all lower-case, ie. 'twitter'.
@@ -139,9 +135,6 @@ The content endpoint returns content objects as a list along with metadata about
     'language_key': Two or three letter language code, text
     'date_posted': datetime, text,
     'content_url': text,
-    'locations': list of dictionaries of form 
-                {'location_id': int
-                'location_name: text},
     'platform_id': int,
     'platform_name': text
     }
@@ -205,7 +198,7 @@ The content API can be queried with the parameters below to access particular pi
 
 This endpoint provides access to one or more entity objects.
 
-This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/entity/`. See below for examples. 
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/prod/v2019-04-15/entity/`. See below for examples. 
 
 #### Return objects
 
@@ -252,7 +245,7 @@ The content API can be queried with the parameters below to access particular pi
 
 This endpoint provides access to one or more brand objects.
 
-This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/brand/`. See below for examples. 
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/prod/v2019-04-15/brand/`. See below for examples. 
 
 #### Return objects
 
@@ -325,7 +318,7 @@ The brand API can be queried with the parameters below to access particular bran
 This endpoint provides access to one or more portfolio objects. A portfolio is a media house, ministry, military branch, 
 or embassy controlling one or more brands.
 
-This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/portfolio/`. See below for examples. 
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/prod/v2019-04-15/portfolio/`. See below for examples. 
 
 #### Return objects
 
@@ -382,12 +375,67 @@ The portfolio API can be queried with the parameters below to access particular 
 
 `/v2019-04-15/portfolio/search/portfolio_match=Justice` - Returns all Ministries of Justice
 
+### Actor
+
+This endpoint provides access to one or more actor objects. An actor is a state, FTO, parastate organization, or
+intergovernmental body
+
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/prod/v2019-04-15/actor/`. See below for examples. 
+
+#### Return objects
+
+The actor endpoint returns a list of actor objects and some metadata about the request and the number of objects returned.
+
+##### Overall return
+```
+{
+	"actor_object_list":"list", List of actor objects
+	"num_entities": "int", Number of actors in the actor list
+}
+```
+
+##### Actor Object
+```
+
+    {
+      "actor_id": "int", Internal Omelas ID
+      "actor_name": "string", Plain English name of portfolio
+      "actor_id": "int", Interal Omelas ID
+      "portfolio_list": "list", list of Omelas IDs of portfolios owned by actor
+      "actor_type": "string", Classification of portfolio
+      "num_brands": "int", Number of brands owned by actor
+      "num_portfolios": "int", Number of portfolios owned by actor
+      "num_entities": "int", Number of entities owned by actor
+      "num_platforms": "int", Count of platforms on which the actor holds accounts
+    }
+
+```
+
+#### Path parameters
+
+- actor_id
+  - An integer to return a single entity actor with the same ID.
+
+#### Query parameters
+
+The portfolio API can be queried with the parameters below to access particular portfolios
+
+- actor_id (int)
+  - Unique identifier assigned by Omelas
+  - multiple items can be passed `?actor_id=1&actor_id=2`, up to 50 items are allowed
+
+
+#### Example queries
+
+`/v2019-04-15/actor/ACTOR_ID` - Returns a single portfolio object with the provided portfolio ID
+`/v2019-04-15/portfolio/search/portfolio_match=Republic` - Returns all actor with Republic in name
+
 
 ### Story
 
 This endpoint provides access to one or more story objects.
 
-This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/dev/v2019-04-15/story/`. See below for examples. 
+This endpoint can be accessed at `https://e9bz5rf9tc.execute-api.us-gov-west-1.amazonaws.com/prod/v2019-04-15/story/`. See below for examples. 
 
 #### Return objects
 
